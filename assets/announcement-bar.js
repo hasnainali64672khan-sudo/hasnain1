@@ -1,128 +1,57 @@
 import { Component } from '@theme/component';
 
-/**
- * Announcement banner custom element that allows fading between content.
- * Based on the Slideshow component.
- *
- * @typedef {object} Refs
- * @property {HTMLElement} slideshowContainer
- * @property {HTMLElement[]} [slides]
- * @property {HTMLButtonElement} [previous]
- * @property {HTMLButtonElement} [next]
- *
- * @extends {Component<Refs>}
- */
 export class AnnouncementBar extends Component {
-  #current = 0;
-
-  /**
-   * The interval ID for automatic playback.
-   * @type {number|undefined}
-   */
-  #interval = undefined;
-
   connectedCallback() {
     super.connectedCallback();
 
-    this.addEventListener('mouseenter', this.suspend);
-    this.addEventListener('mouseleave', this.resume);
-    document.addEventListener('visibilitychange', this.#handleVisibilityChange);
+    const track = this.querySelector('.announcement-bar__track');
+    if (!track) return;
 
-    this.play();
-  }
+    const contents = track.querySelectorAll('.announcement-bar__content');
+    if (contents.length < 2) return;
 
-  next() {
-    this.current += 1;
-  }
+    const original = contents[0];
+    const clone = contents[1];
 
-  previous() {
-    this.current -= 1;
-  }
+    let scrollSpeed = this.getAttribute('data-speed') || 1;
+    let animationId = null;
+    let paused = false;
 
-  /**
-   * Starts automatic slide playback.
-   * @param {number} [interval] - The time interval in seconds between slides.
-   */
-  play(interval = this.autoplayInterval) {
-    if (!this.autoplay) return;
+    const getTotalWidth = () => {
+      return original.scrollWidth;
+    };
 
-    this.paused = false;
+    let pos = 0;
 
-    this.#interval = setInterval(() => {
-      if (this.matches(':hover') || document.hidden) return;
+    const step = () => {
+      if (!paused) {
+        pos -= scrollSpeed;
+        const totalWidth = getTotalWidth();
 
-      this.next();
-    }, interval);
-  }
+        if (Math.abs(pos) >= totalWidth) {
+          pos = 0;
+        }
 
-  /**
-   * Pauses automatic slide playback.
-   */
-  pause() {
-    this.paused = true;
-    this.suspend();
-  }
+        track.style.transform = `translateX(${pos}px)`;
+      }
+      animationId = requestAnimationFrame(step);
+    };
 
-  get paused() {
-    return this.hasAttribute('paused');
-  }
-
-  set paused(paused) {
-    this.toggleAttribute('paused', paused);
-  }
-
-  /**
-   * Suspends automatic slide playback.
-   */
-  suspend() {
-    clearInterval(this.#interval);
-    this.#interval = undefined;
-  }
-
-  /**
-   * Resumes automatic slide playback if autoplay is enabled.
-   */
-  resume() {
-    if (!this.autoplay || this.paused) return;
-
-    this.pause();
-    this.play();
-  }
-
-  get autoplay() {
-    return Boolean(this.autoplayInterval);
-  }
-
-  get autoplayInterval() {
-    const interval = this.getAttribute('autoplay');
-    const value = parseInt(`${interval}`, 10);
-
-    if (Number.isNaN(value)) return undefined;
-
-    return value * 1000;
-  }
-
-  get current() {
-    return this.#current;
-  }
-
-  set current(current) {
-    this.#current = current;
-
-    let relativeIndex = current % (this.refs.slides ?? []).length;
-    if (relativeIndex < 0) {
-      relativeIndex += (this.refs.slides ?? []).length;
-    }
-
-    this.refs.slides?.forEach((slide, index) => {
-      slide.setAttribute('aria-hidden', `${index !== relativeIndex}`);
+    this.addEventListener('mouseenter', () => { paused = true; });
+    this.addEventListener('mouseleave', () => { paused = false; });
+    document.addEventListener('visibilitychange', () => {
+      paused = document.hidden;
     });
-  }
 
-  /**
-   * Pause the slideshow when the page is hidden.
-   */
-  #handleVisibilityChange = () => (document.hidden ? this.pause() : this.resume());
+    animationId = requestAnimationFrame(step);
+
+    this.disconnectedCallback = () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    };
+  }
 }
 
 if (!customElements.get('announcement-bar-component')) {

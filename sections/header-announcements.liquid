@@ -1,6 +1,5 @@
 
-
-{% if section.blocks.size > 1 %}
+{% if section.blocks.size > 0 %}
   <script
     src="{{ 'announcement-bar.js' | asset_url }}"
     type="module"
@@ -15,27 +14,32 @@
   class="announcement-bar spacing-style section section--{{ section.settings.section_width }} color-custom-{{ section.id }}"
   style="{% render 'spacing-padding', settings: section.settings %}; --border-bottom-width: {{ section.settings.divider_width }}px;{% if section.settings.divider_color != blank %} --color-border: {{ section.settings.divider_color }};{% endif %}"
 >
-  {% liquid
-    assign autoplay = false
-    assign show_arrows = false
-    if section.blocks.size > 1
-      assign autoplay = true
-      assign show_arrows = true
-    endif
-  %}
-
-  <announcement-bar-component
-    class="announcement-bar__slider"
-    {% if autoplay == true %}
-      autoplay="{{ section.settings.speed }}" aria-live="polite"
-    {% endif %}
-  >
-    {% if show_arrows %}
-      {% render 'slideshow-arrows', icon_style: 'chevron' %}
-    {% endif %}
-
-    <div class="announcement-bar__slides">
-      {% content_for 'blocks' %}
+  <announcement-bar-component class="announcement-bar__marquee">
+    <div class="announcement-bar__track">
+      <div class="announcement-bar__content">
+        {% for block in section.blocks %}
+          <span class="announcement-bar__item">
+            {{ block.settings.text }}
+            {% if block.settings.link != blank %}
+              <a href="{{ block.settings.link }}" class="announcement-bar__link">
+                <span class="visually-hidden">{{ block.settings.text | strip_html }}</span>
+              </a>
+            {% endif %}
+          </span>
+        {% endfor %}
+      </div>
+      <div class="announcement-bar__content announcement-bar__content--clone">
+        {% for block in section.blocks %}
+          <span class="announcement-bar__item">
+            {{ block.settings.text }}
+            {% if block.settings.link != blank %}
+              <a href="{{ block.settings.link }}" class="announcement-bar__link">
+                <span class="visually-hidden">{{ block.settings.text | strip_html }}</span>
+              </a>
+            {% endif %}
+          </span>
+        {% endfor %}
+      </div>
     </div>
   </announcement-bar-component>
 </aside>
@@ -43,80 +47,44 @@
 {% stylesheet %}
   .announcement-bar {
     border-block-end: var(--border-bottom-width) solid var(--color-border);
+    overflow: hidden;
   }
 
-  .announcement-bar__slider {
+  .announcement-bar__marquee {
     display: flex;
-    flex-direction: row;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .announcement-bar__track {
+    display: flex;
+    white-space: nowrap;
+    will-change: transform;
+  }
+
+  .announcement-bar__content {
+    display: flex;
     align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  .announcement-bar__item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
     position: relative;
-
-    @media screen and (max-width: 749px) {
-      grid-column: 1 / -1;
-    }
   }
 
-  .announcement-bar__slides {
-    display: grid;
-    grid: [stack] auto / [stack] auto;
-    width: calc(100% - var(--button-size) * 2);
-    max-width: 680px;
-    margin-inline: auto;
-  }
-
-  .announcement-bar__slides > * {
-    grid-area: stack;
-  }
-
-  .announcement-bar__slide {
-    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
-    content-visibility: visible;
-
-    &[aria-hidden='true'] {
-      opacity: 0;
-      visibility: hidden;
-    }
-  }
-
-  .announcement-bar__slider slideshow-arrows {
-    padding: 0;
-    mix-blend-mode: normal;
-  }
-
-  .announcement-bar__slider slideshow-arrows .slideshow-control {
-    color: var(--color-foreground);
-  }
-
-  .announcement-bar__slider .slideshow-control {
-    display: flex;
-    padding: 0;
-    width: var(--button-size);
-    height: var(--button-size);
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-    animation: none;
-
-    @media screen and (min-width: 750px) {
-      --slideshow-control-offset: calc((var(--button-size) - var(--icon-size-xs)) / 2);
-
-      .section--page-width &.slideshow-control--previous {
-        transform: translateX(var(--slideshow-control-offset));
-      }
-    }
-  }
-
-  .announcement-bar__slider .slideshow-control .svg-wrapper {
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
-  }
-
-  .announcement-bar__slide {
-    place-content: center;
-  }
-
-  .announcement-bar__text:first-child {
-    margin: 0;
+  .announcement-bar__item + .announcement-bar__item:before {
+    content: "★";
+    margin-right: 2rem;
+    opacity: 0.5;
   }
 
   .announcement-bar__link {
@@ -164,7 +132,7 @@
           "label": "t:options.full"
         }
       ],
-      "default": "page-width"
+      "default": "full-width"
     },
     {
       "type": "color",
@@ -201,7 +169,7 @@
       "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 15
+      "default": 12
     },
     {
       "type": "range",
@@ -211,7 +179,7 @@
       "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 15
+      "default": 12
     }
   ],
   "presets": [
