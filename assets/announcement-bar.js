@@ -11,9 +11,8 @@ export class AnnouncementBar extends Component {
     if (contents.length < 2) return;
 
     const original = contents[0];
-    const clone = contents[1];
 
-    let scrollSpeed = this.getAttribute('data-speed') || 1;
+    let scrollSpeed = 0.8;
     let animationId = null;
     let paused = false;
 

@@ -25,7 +25,10 @@
     {{ block.shopify_attributes }}
   >
     <p class="announcement-bar__text">
-      {{ block.settings.text }}
+      <span class="announcement-text">{{ block.settings.text }}</span>
+      {% if block_settings.link_text != blank %}
+        <span class="announcement-link-text">{{ block_settings.link_text }}</span>
+      {% endif %}
     </p>
 
     {% if block_settings.link != blank %}
@@ -120,6 +123,12 @@
       "id": "text",
       "label": "t:settings.text",
       "default": "t:text_defaults.shop_our_latest_arrivals"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "link_text",
+      "label": "Link text",
+      "info": "Appears next to main text (e.g. 'Easy Refund & Exchange')"
     },
     {
       "type": "url",
